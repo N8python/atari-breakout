@@ -1,4 +1,8 @@
-var paddle, intervalId, ball, blocks = [], score = 0;
+var paddle, intervalId, ball, blocks = [],
+  score = 0,
+  ballsLeft = 5,
+  blockLimit = 4,
+  gameState = "start";
 const blockWidth = 50;
 const blockHeight = 10;
 window.onload = function() {
@@ -34,9 +38,9 @@ window.onload = function() {
       ctx.fillRect(this.x + 2, this.y + 2, blockWidth - 2, blockHeight - 2);
     }
   }
-  for (var y = 0; y < 4; y++) {
+  for (var y = 0; y < blockLimit; y++) {
     for (var x = 0; x < Math.floor(canvas.width / blockWidth); x++) {
-      blocks.push(new Block(x * blockWidth, y * blockHeight + canvas.height/3))
+      blocks.push(new Block(x * blockWidth, y * blockHeight + canvas.height / 3))
     }
   }
   paddle = {
@@ -60,23 +64,30 @@ window.onload = function() {
       drawEllipse(this.x, this.y, this.rad, this.rad);
     },
     move: function() {
-      if(this.xVel < -9) this.xVel = -9;
-      if(this.xVel > 9) this.xVel = 9;
-      if(this.xVel < 3 && this.xVel >= 0) this.xVel = 3;
-      if(this.xVel > -3 && this.xVel < 0) this.xVel = -3;
-      if(this.yVel < -9) this.yVel = -9;
-      if(this.yVel > 9) this.yVel = 9;
-      if(this.yVel < 3 && this.yVel >= 0) this.yVel = 3;
-      if(this.yVel > -3 && this.yVel < 0) this.yVel = -3;
+      if (this.xVel < -7) this.xVel = -7;
+      if (this.xVel > 7) this.xVel = 7;
+      if (this.xVel < 3 && this.xVel >= 0) this.xVel = 3;
+      if (this.xVel > -3 && this.xVel < 0) this.xVel = -3;
+      if (this.yVel < -7) this.yVel = -7;
+      if (this.yVel > 7) this.yVel = 7;
+      if (this.yVel < 3 && this.yVel >= 0) this.yVel = 3;
+      if (this.yVel > -3 && this.yVel < 0) this.yVel = -3;
       this.x += this.xVel;
       this.y += this.yVel;
       if (this.x < this.rad || this.x > canvas.width - this.rad) {
         this.xVel *= -1;
         this.x += this.xVel;
       }
-      if (this.y < this.rad || this.y > canvas.height - this.rad) {
+      if (this.y < this.rad) {
         this.yVel *= -1;
         this.y += this.yVel;
+      }
+      if (this.y > canvas.height - this.rad) {
+        this.x = canvas.width / 2;
+        this.y = canvas.height * 0.55;
+        this.xVel = 3;
+        this.yVel = 3;
+        ballsLeft--;
       }
       if (touching(this, paddle)) {
         /*this.xVel *= getRandomFloat(-1.5, -0.5);
@@ -105,19 +116,52 @@ window.onload = function() {
   intervalId = setInterval(() => {
     ctx.fillStyle = "Black";
     ctx.fillRect(0, 0, canvas.width, canvas.height)
-    paddle.draw();
-    ball.draw();
-    ball.move();
-    blocks.forEach(block => {
-      block.draw();
-    });
-    ctx.font = "20px Monospace";
-    ctx.fillText("Score: " + score, 10, 25);
-    for (var i = 0; i < blocks.length; i++) {
-      if (blocks[i].toRemove) {
-        score++;
-        blocks.splice(i, 1);
+    if (gameState === "start") {
+      ctx.fillStyle = "White";
+      ctx.font = "40px Monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("Atari Breakout", canvas.width / 2, canvas.height / 2)
+      ctx.font = "20px Monospace";
+      ctx.fillText("Click to Start", canvas.width /2, canvas.height / 2 + 60)
+    } else if (gameState === "play") {
+      if(ballsLeft === -1){
+        gameState = "over";
       }
+      paddle.draw();
+      ball.draw();
+      ball.move();
+      blocks.forEach(block => {
+        block.draw();
+      });
+      ctx.font = "20px Monospace";
+      ctx.fillText("Score: " + score, 60, 25);
+      ctx.fillStyle = "White";
+      drawEllipse(canvas.width * 0.9, 25, 15, 15);
+      ctx.fillStyle = "Black";
+      ctx.textAlign = "center";
+      ctx.fillText(ballsLeft, canvas.width * 0.9, 32);
+      for (var i = 0; i < blocks.length; i++) {
+        if (blocks[i].toRemove) {
+          score++;
+          blocks.splice(i, 1);
+        }
+      }
+      if (blocks.length === 0) {
+        if (blockLimit < 8) blockLimit++;
+        for (var y = 0; y < blockLimit; y++) {
+          for (var x = 0; x < Math.floor(canvas.width / blockWidth); x++) {
+            blocks.push(new Block(x * blockWidth, y * blockHeight + canvas.height / 3))
+          }
+        }
+      }
+    } else if (gameState === "over"){
+      ctx.fillStyle = "White";
+      ctx.font = "40px Monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("Game Over", canvas.width / 2, canvas.height / 2)
+      ctx.font = "20px Monospace";
+      ctx.fillText("...for now. Click to play again!", canvas.width /2, canvas.height / 2 + 60)
+      ctx.fillText("Score: " + score, canvas.width /2, canvas.height / 2 + 100)
     }
   }, 16)
 }
@@ -125,5 +169,20 @@ document.getElementById("canvas").addEventListener("mousemove", event => {
   paddle.x = event.x - (window.innerWidth / 2 - canvas.width / 2);
 })
 document.getElementById("canvas").addEventListener("mousedown", event => {
-  paddle.x = event.x - (window.innerWidth / 2 - canvas.width / 2);
+  if(gameState === "start"){
+     gameState = "play";
+  } else if(gameState === "play") {
+    paddle.x = event.x - (window.innerWidth / 2 - canvas.width / 2);
+  } else if(gameState === "over"){
+    score = 0;
+    ballsLeft = 5;
+    blockLimit = 4;
+    ball.x = canvas.width / 2;
+    ball.y = canvas.height * 0.55;
+    ball.xVel = 3;
+    ball.yVel = 3;
+    paddle.x = canvas.width / 2 - paddle.width / 2;
+    paddle.y = canvas.height * 0.9 - paddle.height / 2;
+    gameState = "play";
+  }
 })
