@@ -25,7 +25,7 @@ window.onload = function() {
   setInterval(() => {
     $("#canvas").css("margin-left", window.innerWidth / 2 - canvas.width / 2)
   }, 1)
-  class Block {
+  window.Block = class {
     constructor(x, y) {
       this.x = x;
       this.y = y;
