@@ -183,6 +183,12 @@ document.getElementById("canvas").addEventListener("mousedown", event => {
     ball.yVel = 3;
     paddle.x = canvas.width / 2 - paddle.width / 2;
     paddle.y = canvas.height * 0.9 - paddle.height / 2;
+    blocks = [];
+    for (var y = 0; y < blockLimit; y++) {
+      for (var x = 0; x < Math.floor(canvas.width / blockWidth); x++) {
+        blocks.push(new Block(x * blockWidth, y * blockHeight + canvas.height / 3))
+      }
+    }
     gameState = "play";
   }
 })
